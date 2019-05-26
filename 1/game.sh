@@ -21,7 +21,7 @@ change_symbol() {
         echo "This cell is not empty!"
         wait_pos
     done
-    change_state $pos 'O'
+    change_state $pos $1
 }
 
 # Wait for position from user.
@@ -43,7 +43,7 @@ send_changes() {
 
 # Wait changes from game enemy.
 wait_changes() {
-    new_pos=`nc -l -p 36001 -w 1`
+    new_pos=`nc -l -p 36000 -w 1`
 }
 
 # Change the state by $1 position to $2 element.
@@ -54,7 +54,7 @@ change_state() {
 #Check the draw end or the winner combinations.
 check_end_game() {
     if check_winner $1; then
-        if [[ $1 == 'O' ]]; then
+        if [[ "$1" == "$2" ]]; then
             echo "You win!"
         else
             echo "You lose!"
@@ -88,17 +88,34 @@ check_winner() {
 
 # Main cycle for game.
 main() {
-    while true; do
-        draw_state
-        wait_pos
-        change_symbol
-        draw_state
-        send_changes
-        check_end_game 'O'
-        wait_changes
-        change_state $new_pos 'X'
-        check_end_game 'X' 
-    done
+    if [[ $1 == 'O' ]]; then
+        while true; do
+            draw_state
+            wait_pos
+            change_symbol 'O'
+            draw_state
+            send_changes
+            check_end_game 'O' $1
+            wait_changes
+            change_state $new_pos 'X'
+            check_end_game 'X' $1
+        done
+    elif [[ $1 == 'X' ]]; then
+        while true; do
+            draw_state
+            wait_changes
+            change_state $new_pos 'O'
+            draw_state
+            check_end_game 'O' $1
+            wait_pos
+            change_symbol 'X'
+            draw_state
+            send_changes
+            check_end_game 'X' $1
+        done
+    else
+        echo "Give the 'O' or 'X' symbol as parameter to game"
+    fi
 }
 
-main
+main $1
